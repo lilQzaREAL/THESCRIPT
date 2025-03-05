@@ -1,0 +1,192 @@
+-- Configuration 
+local ESP_COLOR = Color3.fromRGB(255, 0, 0)  -- ESP Glow Color
+local ESP_REFRESH_RATE = 0.5  -- ESP Refresh Rate (seconds)
+
+-- Services
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+
+-- UI Setup
+local gui = Instance.new("ScreenGui")
+gui.Name = "ESP_GUI"
+gui.Parent = game.CoreGui  
+
+local container = Instance.new("Frame")
+container.Name = "ESP_Container"
+container.Size = UDim2.new(0, 520, 0, 140)  -- Adjusted to fit extra button
+container.Position = UDim2.new(0.5, -260, 0, 10)
+container.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+container.BackgroundTransparency = 0.2
+container.BorderSizePixel = 0
+container.Parent = gui
+container.ClipsDescendants = true
+
+local uiCorner = Instance.new("UICorner")
+uiCorner.CornerRadius = UDim.new(0, 10)
+uiCorner.Parent = container
+
+-- **Enable GUI Dragging**
+local function enableDragging(frame)
+    local dragging, dragStart, startPos
+
+    frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = frame.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+
+    frame.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement and dragging then
+            local delta = input.Position - dragStart
+            frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+end
+
+enableDragging(container)
+
+local function createButton(name, text, color, xOffset)
+    local button = Instance.new("TextButton")
+    button.Name = name
+    button.Size = UDim2.new(0, 100, 0, 35)
+    button.Position = UDim2.new(0.5, xOffset, 0.5, -20)
+    button.AnchorPoint = Vector2.new(0.5, 0.5)
+    button.Text = text
+    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button.Font = Enum.Font.GothamBold
+    button.TextSize = 14
+    button.BackgroundColor3 = color
+    button.Parent = container
+    
+    local buttonCorner = Instance.new("UICorner")
+    buttonCorner.CornerRadius = UDim.new(0, 6)
+    buttonCorner.Parent = button
+    
+    return button
+end
+
+local espButton = createButton("ESP_Button", "ESP OFF", Color3.fromRGB(40, 40, 40), -200)
+local jumpButton = createButton("InfiniteJump_Button", "Infinite Jump OFF", Color3.fromRGB(40, 40, 40), -100)
+local speedRunButton = createButton("SpeedRun_Button", "SpeedRun OFF", Color3.fromRGB(40, 40, 40), 0)
+local teleportButton = createButton("Teleport_Button", "Teleport OFF", Color3.fromRGB(40, 40, 40), 100)
+local noclipButton = createButton("NoClip_Button", "NoClip OFF", Color3.fromRGB(40, 40, 40), 200)
+
+-- New Invisible Button
+local invisibleButton = createButton("Invisible_Button", "Invisible OFF", Color3.fromRGB(40, 40, 40), 300)
+
+local madeByText = Instance.new("TextLabel")
+madeByText.Size = UDim2.new(1, 0, 0, 20)
+madeByText.Position = UDim2.new(0, 0, 1, -20)
+madeByText.BackgroundTransparency = 1
+madeByText.Text = "Made By lilQza"
+madeByText.TextColor3 = Color3.fromRGB(255, 255, 255)
+madeByText.TextSize = 14
+madeByText.Font = Enum.Font.Gotham
+madeByText.Parent = container
+
+-- Button Functionality
+local espEnabled = false
+local jumpEnabled = false
+local speedRunEnabled = false
+local teleportEnabled = false
+local noclipEnabled = false
+local invisibleEnabled = false  -- Track the invisibility status
+
+-- ESP Functionality
+local function applyESP(player)
+    if player ~= LocalPlayer and player.Character then
+        local highlight = Instance.new("Highlight")
+        highlight.Name = "ESP_Highlight"
+        highlight.FillColor = ESP_COLOR
+        highlight.FillTransparency = 0.5
+        highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+        highlight.OutlineTransparency = 0.2
+        highlight.Parent = player.Character
+    end
+end
+
+local function removeESP()
+    for _, player in pairs(Players:GetPlayers()) do
+        if player.Character then
+            local highlight = player.Character:FindFirstChild("ESP_Highlight")
+            if highlight then highlight:Destroy() end
+        end
+    end
+end
+
+espButton.MouseButton1Click:Connect(function()
+    espEnabled = not espEnabled
+    espButton.Text = espEnabled and "ESP ON" or "ESP OFF"
+    espButton.BackgroundColor3 = espEnabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(40, 40, 40)
+    if espEnabled then
+        for _, player in pairs(Players:GetPlayers()) do
+            applyESP(player)
+        end
+    else
+        removeESP()
+    end
+end)
+
+-- Infinite Jump
+UserInputService.JumpRequest:Connect(function()
+    if jumpEnabled and LocalPlayer.Character then
+        LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Jumping)
+    end
+end)
+
+jumpButton.MouseButton1Click:Connect(function()
+    jumpEnabled = not jumpEnabled
+    jumpButton.Text = jumpEnabled and "Infinite Jump ON" or "Infinite Jump OFF"
+    jumpButton.BackgroundColor3 = jumpEnabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(40, 40, 40)
+end)
+
+-- SpeedRun
+speedRunButton.MouseButton1Click:Connect(function()
+    speedRunEnabled = not speedRunEnabled
+    speedRunButton.Text = speedRunEnabled and "SpeedRun ON" or "SpeedRun OFF"
+    speedRunButton.BackgroundColor3 = speedRunEnabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(40, 40, 40)
+    LocalPlayer.Character.Humanoid.WalkSpeed = speedRunEnabled and 50 or 16
+end)
+
+-- Teleport
+teleportButton.MouseButton1Click:Connect(function()
+    teleportEnabled = not teleportEnabled
+    teleportButton.Text = teleportEnabled and "Teleport ON" or "Teleport OFF"
+    teleportButton.BackgroundColor3 = teleportEnabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(40, 40, 40)
+    
+    if teleportEnabled then
+        local mouse = LocalPlayer:GetMouse()
+        mouse.Button1Down:Connect(function()
+            if teleportEnabled then
+                LocalPlayer.Character:SetPrimaryPartCFrame(CFrame.new(mouse.Hit.p + Vector3.new(0, 5, 0)))
+            end
+        end)
+    end
+end)
+
+-- NoClip
+RunService.Stepped:Connect(function()
+    if noclipEnabled and LocalPlayer.Character then
+        for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
+            if part:IsA("BasePart") then part.CanCollide = false end
+        end
+    end
+end)
+
+noclipButton.MouseButton1Click:Connect(function()
+    noclipEnabled = not noclipEnabled
+    noclipButton.Text = noclipEnabled and "NoClip ON" or "NoClip OFF"
+    noclipButton.BackgroundColor3 = noclipEnabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(40, 40, 40)
+end)
+
+  
